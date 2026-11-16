@@ -18,6 +18,9 @@ run = "python serve.py"
 
 [services.production]
 
+[services.production.build]
+args = ["uv", "sync", "--locked"]
+
 [services.production.run]
 # Works whether the process starts at the project root or in the artifact directory.
 args = ["bash", "-c", "if [ -f serve.py ]; then exec python serve.py; else exec python artifacts/api-server/serve.py; fi"]

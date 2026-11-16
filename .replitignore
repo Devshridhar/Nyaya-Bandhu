@@ -3,3 +3,6 @@
 
 # No need to store the pnpm store twice.
 .local
+
+# Private user uploads and local development database files
+artifacts/api-server/.local-data

@@ -1,0 +1,1 @@
+- [Provider secrets](provider-secrets.md) — keep third-party credentials in Replit Secrets, never in plain-text project configuration.

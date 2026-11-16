@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f5">
+  <link rel="icon" href="data:,">
+  <title>Nyaya Bandhu — Consumer Grievance Assistant</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #152b27; --muted: #64736e; --line: #dce5df; --paper: #fff;
+      --canvas: #f5f7f5; --green: #175c46; --green-dark: #104737; --mint: #e5f3ed;
+      --amber: #fff2d9; --amber-ink: #805516; --red: #a33a35; --shadow: 0 10px 35px #18342b0c;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .topbar { height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 max(24px, calc((100vw - 1320px)/2)); background: var(--paper); border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; font-size: 17px; font-weight: 750; letter-spacing: -.3px; }
+    .mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--green); color: white; font-size: 18px; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: .15px; margin-top: 2px; }
+    .top-actions { display:flex; gap:10px; align-items:center; }
+    .privacy { color: var(--muted); font-size: 12px; display:flex; gap:7px; align-items:center; }
+    .privacy svg { color: var(--green); }
+    .page { max-width: 1320px; margin: 0 auto; padding: 30px 24px 50px; }
+    .intro { display:flex; justify-content:space-between; gap:20px; align-items:flex-end; margin: 2px 0 22px; }
+    h1 { font-size: clamp(25px,3vw,34px); line-height:1.12; margin:0 0 8px; letter-spacing:-1.1px; }
+    .intro p { color:var(--muted); margin:0; max-width:700px; line-height:1.55; font-size:14px; }
+    .badge { display:inline-flex; align-items:center; gap:7px; padding:7px 11px; border:1px solid var(--line); background:#fff; border-radius:100px; font-size:12px; color:var(--muted); white-space:nowrap; }
+    .dot { width:8px;height:8px;border-radius:50%; background:#d89a2b; }
+    .dot.ok { background:#21966c; }
+    .readiness { display:flex; align-items:center; gap:13px; flex-wrap:wrap; background:#edf4ef; border:1px solid #d9e8dd; border-radius:13px; padding:12px 15px; margin-bottom:20px; }
+    .readiness strong { font-size:12px; margin-right:3px; }
+    .check { display:flex; gap:6px; align-items:center; font-size:11px; color:#51645b; }
+    .check i { width:7px;height:7px;border-radius:50%;background:#d5a33e; }
+    .check i.ok { background:#23946c; }
+    .layout { display:grid; grid-template-columns:minmax(340px,.88fr) minmax(450px,1.25fr); gap:20px; align-items:start; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
+    .card-head { display:flex; justify-content:space-between; align-items:center; padding:17px 19px; border-bottom:1px solid var(--line); }
+    .card-head h2 { font-size:15px; margin:0; letter-spacing:-.2px; }
+    .step { color:var(--muted);font-size:11px; }
+    .card-body { padding:18px 19px 20px; }
+    .label { display:block; font-size:12px; font-weight:650; margin:0 0 8px; }
+    .help { font-size:11px; color:var(--muted); line-height:1.45; margin:7px 0 0; }
+    input[type="text"], input[type="tel"], textarea { width:100%; border:1px solid #d4ded8; border-radius:10px; background:#fff; padding:11px 12px; color:var(--ink); outline:none; }
+    input:focus, textarea:focus { border-color:#6ea78e; box-shadow:0 0 0 3px #228b5b14; }
+    textarea { resize:vertical; min-height:118px; line-height:1.5; }
+    .field { margin-bottom:17px; }
+    .recorder { display:flex; justify-content:space-between; align-items:center; gap:12px; border:1px solid var(--line); border-radius:12px; padding:11px 12px; margin-top:12px; background:#fbfcfb; }
+    .recorder-copy { font-size:12px; font-weight:650; }
+    .recorder-copy small { display:block; color:var(--muted); font-weight:450; margin-top:3px; }
+    .record-button { min-width:102px; border:1px solid #e4c6c4; background:#fff; color:#9d403b; padding:8px 11px; border-radius:9px; font-size:12px; font-weight:650; }
+    .record-button.recording { background:#fff0ee; border-color:#deaaa7; }
+    .upload { border:1px dashed #bdcec4; border-radius:12px; background:#f9fbf9; padding:17px 12px; text-align:center; transition:.15s; }
+    .upload.drag { background:var(--mint); border-color:var(--green); }
+    .upload svg { color:#60806e; }
+    .upload strong { display:block; font-size:12px; margin:5px 0 3px; }
+    .upload span { color:var(--muted); font-size:11px; }
+    .upload input { display:none; }
+    .upload-action { color:var(--green); text-decoration:underline; cursor:pointer; }
+    .file-list { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+    .file-chip { display:flex; align-items:center; gap:7px; max-width:100%; border:1px solid var(--line); background:white; border-radius:8px; padding:5px 8px; font-size:11px; }
+    .file-chip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .file-chip button { border:0; background:none; color:var(--red); font-size:15px; padding:0 2px; }
+    .form-row { display:grid; grid-template-columns:1fr 150px; gap:10px; }
+    .button { border:1px solid transparent; border-radius:10px; padding:10px 14px; background:var(--green); color:white; font-size:12px; font-weight:700; transition:background .15s, transform .15s; }
+    .button:hover { background:var(--green-dark); }
+    .button:active { transform:translateY(1px); }
+    .button:disabled { cursor:not-allowed; opacity:.45; }
+    .button.secondary { background:white; color:var(--ink); border-color:var(--line); }
+    .button.secondary:hover { background:#f4f7f4; }
+    .button.danger { background:white; border-color:#e9c7c5; color:var(--red); }
+    .button.small { padding:8px 10px; font-size:11px; }
+    .primary-row { display:flex; gap:8px; margin-top:16px; }
+    .primary-row .button { flex:1; }
+    .api-key { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+    .api-key summary { cursor:pointer; color:var(--muted); font-size:11px; }
+    .api-key input { margin-top:9px; font-size:12px; }
+    .notice { display:none; border-radius:10px; padding:10px 12px; margin:12px 0 0; font-size:12px; line-height:1.45; }
+    .notice.show { display:block; }
+    .notice.error { background:#fff0ee; color:#883936; border:1px solid #f2d4d1; }
+    .notice.success { background:#eaf5ef; color:#285a40; border:1px solid #d1e9d9; }
+    .case-id { color:var(--muted); font-size:11px; }
+    .status { font-size:10px; font-weight:750; border-radius:100px; padding:6px 9px; background:#eef1ef; color:#59665f; }
+    .status.ready_for_user_review { background:#e7f4ed; color:#1b6749; }
+    .status.awaiting_missing_info { background:#fff1da; color:#875b16; }
+    .status.filed_complete { background:#e7f4ed; color:#1b6749; }
+    .status.approved_and_filing { background:#eaf0fd; color:#315a9b; }
+    .status.purged { background:#f9e9e8; color:#963e39; }
+    .empty { min-height:386px; display:grid; place-content:center; text-align:center; padding:25px; color:var(--muted); }
+    .empty-icon { margin:0 auto 13px; display:grid; place-items:center; width:54px;height:54px;border-radius:18px;background:var(--mint);color:var(--green); }
+    .empty strong { color:var(--ink); font-size:14px; }
+    .empty span { font-size:12px; line-height:1.5; max-width:280px; margin-top:7px; }
+    .case-content { display:none; }
+    .case-meta { display:flex; align-items:center; gap:9px; }
+    .facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; margin-bottom:17px; }
+    .fact { border:1px solid var(--line); border-radius:10px; padding:10px 11px; min-width:0; }
+    .fact.wide { grid-column:1/-1; }
+    .fact label { color:var(--muted); display:block; font-size:10px; margin-bottom:5px; }
+    .fact div { font-size:12px; font-weight:650; line-height:1.45; overflow-wrap:anywhere; }
+    .missing-box { background:var(--amber); color:var(--amber-ink); border-radius:10px; padding:11px 12px; font-size:12px; line-height:1.5; margin:0 0 15px; }
+    .tabs { display:flex; border-bottom:1px solid var(--line); gap:4px; }
+    .tab { border:0; background:transparent; padding:10px 11px; color:var(--muted); font-size:11px; font-weight:650; border-bottom:2px solid transparent; }
+    .tab.active { color:var(--green); border-bottom-color:var(--green); }
+    .tab-panel { min-height:132px; max-height:270px; overflow:auto; padding:14px 1px 7px; display:none; }
+    .tab-panel.active { display:block; }
+    .tab-panel pre { white-space:pre-wrap; overflow-wrap:anywhere; font-family:inherit; font-size:12px; line-height:1.6; margin:0; color:#32443d; }
+    .email-note { font-size:11px; color:var(--muted); margin:0 0 8px; line-height:1.45; }
+    .audit { margin-top:18px; border-top:1px solid var(--line); padding-top:14px; }
+    .audit-title { display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:10px; }
+    .audit-list { display:grid; gap:8px; max-height:130px; overflow:auto; }
+    .audit-item { display:flex; gap:9px; color:var(--muted); font-size:10px; line-height:1.4; }
+    .audit-item i { width:7px;height:7px;border-radius:50%;background:#78a08b; flex:none; margin-top:3px; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+    .actions .button { flex:1 1 auto; }
+    .nch-guide { display:none; background:#f3f8f5; border:1px solid #dce9e0; border-radius:10px; padding:12px; margin-top:12px; font-size:11px; line-height:1.5; }
+    .nch-guide.show { display:block; }
+    .footer { text-align:center; color:var(--muted); font-size:10px; margin:18px auto 0; max-width:800px; line-height:1.5; }
+    .hidden { display:none !important; }
+    @media(max-width:900px) { .layout { grid-template-columns:1fr; } .empty { min-height:180px; } }
+    @media(max-width:560px) {
+      .topbar { height:60px; padding:0 16px; } .privacy { font-size:0; } .page { padding:22px 13px 34px; }
+      .intro { align-items:flex-start; flex-direction:column; gap:12px; } .readiness { gap:9px; }
+      .card-head,.card-body { padding-left:14px; padding-right:14px; } .layout { gap:13px; }
+      .form-row { grid-template-columns:1fr 115px; } .facts { gap:7px; }
+      .tab { padding:9px 7px; font-size:10px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><div class="mark" aria-hidden="true">न</div><div>Nyaya Bandhu<small>Consumer grievance assistant</small></div></div>
+    <div class="top-actions">
+      <div class="privacy" title="Your uploaded case information is encrypted before storage">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        Encrypted case storage
+      </div>
+      <button class="button secondary small" id="refreshReady">Refresh status</button>
+    </div>
+  </header>
+  <main class="page">
+    <section class="intro">
+      <div>
+        <h1>Turn a payment problem into a clear complaint.</h1>
+        <p>Share what happened in your own words, add a payment screenshot, and review the complaint before anything is sent.</p>
+      </div>
+      <div class="badge"><span class="dot" id="overallDot"></span><span id="overallStatus">Checking services…</span></div>
+    </section>
+    <section class="readiness" id="readiness" aria-label="Service readiness">
+      <strong>Service status</strong>
+      <span class="check"><i></i><span>Database</span></span>
+      <span class="check"><i></i><span>Private storage</span></span>
+      <span class="check"><i></i><span>Encryption</span></span>
+      <span class="check"><i></i><span>AI extraction</span></span>
+      <span class="check"><i></i><span>Email</span></span>
+      <span class="check"><i></i><span>WhatsApp</span></span>
+    </section>
+
+    <div class="layout">
+      <section class="card">
+        <div class="card-head"><h2>Tell us what happened</h2><span class="step">Your details stay yours</span></div>
+        <div class="card-body">
+          <div class="field">
+            <label class="label" for="contact">Phone number for this case</label>
+            <input id="contact" type="tel" autocomplete="tel" placeholder="+91 98765 43210" maxlength="64">
+            <p class="help">Used only to link this case to your follow-up messages. It is encrypted before it is stored.</p>
+          </div>
+          <div class="field">
+            <label class="label" for="story">Describe the issue</label>
+            <textarea id="story" maxlength="12000" placeholder="For example: I paid ₹850 to a seller on 12 October. The order was cancelled, but I have not received a refund. I want the refund returned."></textarea>
+            <div class="recorder">
+              <div class="recorder-copy">Prefer speaking?<small>Record a voice note in Hindi or another language.</small></div>
+              <button type="button" class="record-button" id="recordButton">Start recording</button>
+            </div>
+            <div class="file-list" id="audioList"></div>
+          </div>
+          <div class="field">
+            <label class="label">Payment or invoice screenshots</label>
+            <div class="upload" id="dropZone">
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M20 16.5v2A1.5 1.5 0 0 1 18.5 20h-13A1.5 1.5 0 0 1 4 18.5v-2"/></svg>
+              <strong>Drop screenshots here</strong>
+              <span>or <label class="upload-action" for="screenshots">choose files</label> · JPEG, PNG, WebP · max 3</span>
+              <input id="screenshots" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" multiple>
+            </div>
+            <div class="file-list" id="imageList"></div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label class="label" for="language">Reply language</label>
+              <input id="language" type="text" value="en" maxlength="20" aria-label="Language code">
+            </div>
+            <div style="display:flex;align-items:end">
+              <button class="button secondary" type="button" id="newCase" style="width:100%">New case</button>
+            </div>
+          </div>
+          <p class="help">Use a language code like <b>hi</b>, <b>hinglish</b>, <b>en</b>, <b>ta</b>, or <b>bn</b>.</p>
+          <div class="primary-row">
+            <button class="button" id="submitCase">Create complaint</button>
+            <button class="button secondary" id="clearForm">Clear</button>
+          </div>
+          <div class="notice" id="notice" role="status"></div>
+          <details class="api-key">
+            <summary>Operator access (optional)</summary>
+            <form id="apiKeyForm" onsubmit="return false">
+              <input id="apiKey" type="password" placeholder="X-API-Key" autocomplete="off">
+              <p class="help">Only needed when ADMIN_API_KEY is configured. Kept in this browser tab only.</p>
+            </form>
+          </details>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2>Case review</h2><span class="case-id" id="caseRef">No case selected</span></div>
+          <div class="case-meta"><span class="status" id="caseStatus">Waiting</span></div>
+        </div>
+        <div class="empty" id="emptyState">
+          <div class="empty-icon"><svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 3h7l5 5v13H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v6h5M9 14h7M9 18h5"/></svg></div>
+          <strong>Your complaint will appear here</strong>
+          <span>After you share the details, check each fact and read the draft before approving it.</span>
+        </div>
+        <div class="case-content" id="caseContent">
+          <div class="card-body">
+            <div class="missing-box hidden" id="missingBox"></div>
+            <div class="facts" id="facts"></div>
+            <div class="tabs" role="tablist">
+              <button class="tab active" data-tab="summary">Your-language summary</button>
+              <button class="tab" data-tab="draft">Formal complaint</button>
+              <button class="tab" data-tab="email">Email preview</button>
+            </div>
+            <div class="tab-panel active" id="panel-summary"><pre></pre></div>
+            <div class="tab-panel" id="panel-draft"><pre></pre></div>
+            <div class="tab-panel" id="panel-email"><p class="email-note"></p><pre></pre></div>
+            <div class="actions">
+              <button class="button" id="approve">Approve &amp; file</button>
+              <button class="button secondary" id="download">Download PDF</button>
+              <button class="button secondary" id="docket">Log docket number</button>
+              <button class="button danger" id="purge">Erase this case</button>
+            </div>
+            <div class="nch-guide" id="nchGuide"></div>
+            <div class="audit">
+              <div class="audit-title"><span>Case activity</span><span class="case-id" id="pdfSize"></span></div>
+              <div class="audit-list" id="auditList"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+    <p class="footer">Nyaya Bandhu helps organize your complaint; it is not a lawyer or a substitute for legal advice. Review every fact before approving. A complaint email is sent only when a verified merchant grievance address is available and live sending is enabled.</p>
+  </main>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      let currentCase = null;
+      let screenshots = [];
+      let audioBlob = null;
+      let recorder = null;
+      let chunks = [];
+      let stream = null;
+      let pdfUrl = null;
+
+      const setNotice = (text, kind = "success") => {
+        const box = $("notice");
+        box.textContent = text;
+        box.className = `notice show ${kind}`;
+      };
+      const clearNotice = () => $("notice").className = "notice";
+      const headers = (extra = {}) => {
+        const apiKey = $("apiKey").value.trim();
+        return { ...(apiKey ? { "X-API-Key": apiKey } : {}), ...extra };
+      };
+      const request = async (url, options = {}) => {
+        const response = await fetch(url, { ...options, headers: headers(options.headers || {}) });
+        const type = response.headers.get("content-type") || "";
+        const data = type.includes("application/json") ? await response.json() : await response.text();
+        if (!response.ok) throw new Error(data?.detail || `Request failed (${response.status})`);
+        return data;
+      };
+      const escapeText = (value) => value == null || value === "" ? "Not provided" : String(value);
+
+      async function refreshReadiness() {
+        try {
+          const response = await fetch("/readyz", { cache: "no-store" });
+          const data = await response.json();
+          const checks = data.checks || {};
+          const ordered = [
+            ["database", "Database", checks.database?.ok],
+            ["storage", "Private storage", checks.storage?.ok],
+            ["encryption", "Encryption", checks.encryption?.ok],
+            ["openai", "AI extraction", checks.openai?.ok],
+            ["email", "Email", checks.email?.configured],
+            ["whatsapp", "WhatsApp", checks.whatsapp?.configured],
+          ];
+          document.querySelectorAll(".check").forEach((el, i) => {
+            const item = ordered[i];
+            el.querySelector("span").textContent = `${item[1]}${item[0] === "storage" && checks.storage?.kind ? ` · ${checks.storage.kind === "local-fallback" ? "local fallback" : "App Storage"}` : ""}`;
+            el.querySelector("i").classList.toggle("ok", !!item[2]);
+          });
+          $("overallStatus").textContent = data.status === "ready" ? "Ready for a new case" : "Some services need attention";
+          $("overallDot").classList.toggle("ok", data.status === "ready");
+        } catch {
+          $("overallStatus").textContent = "Service status unavailable";
+        }
+      }
+
+      function setCase(data) {
+        currentCase = data;
+        if (!data) {
+          $("caseContent").style.display = "none";
+          $("emptyState").style.display = "grid";
+          $("caseRef").textContent = "No case selected";
+          $("caseStatus").textContent = "Waiting";
+          $("caseStatus").className = "status";
+          $("submitCase").textContent = "Create complaint";
+          pdfUrl = null;
+          return;
+        }
+        $("emptyState").style.display = "none";
+        $("caseContent").style.display = "block";
+        $("caseRef").textContent = data.case_reference;
+        $("caseStatus").textContent = (data.status || "").replaceAll("_", " ");
+        $("caseStatus").className = `status ${(data.status || "").toLowerCase()}`;
+        $("submitCase").textContent = "Send follow-up";
+        $("submitCase").disabled = data.status === "PURGED" || data.status === "FILED_COMPLETE";
+        const facts = data.extracted_facts || {};
+        const displayFacts = [
+          ["Merchant", facts.merchant_name],
+          ["Amount", facts.claim_amount_inr == null ? null : `₹${Number(facts.claim_amount_inr).toLocaleString("en-IN")}`],
+          ["Transaction date", facts.transaction_date],
+          ["UTR / order ID", facts.utr_or_order_id],
+          ["Issue and requested remedy", facts.grievance_description, true],
+        ];
+        $("facts").replaceChildren(...displayFacts.map(([label, value, wide]) => {
+          const card = document.createElement("div");
+          card.className = `fact${wide ? " wide" : ""}`;
+          const title = document.createElement("label");
+          title.textContent = label;
+          const detail = document.createElement("div");
+          detail.textContent = escapeText(value);
+          card.append(title, detail);
+          return card;
+        }));
+        const missing = data.missing_fields || [];
+        const missingBox = $("missingBox");
+        if (missing.length) {
+          const question = data.follow_up_question_native || `Still needed: ${missing.join(", ")}. Send the missing details in the left panel.`;
+          missingBox.textContent = question;
+          missingBox.classList.remove("hidden");
+        } else missingBox.classList.add("hidden");
+        $("panel-summary").querySelector("pre").textContent = data.draft_summary_native || data.follow_up_question_native || "A summary will appear when the required facts are available.";
+        $("panel-draft").querySelector("pre").textContent = data.legal_draft_en || "The formal complaint will appear after the five required facts are confirmed.";
+        const email = data.nodal_email_payload || {};
+        $("panel-email").querySelector(".email-note").textContent = email.email_verified
+          ? `Verified merchant address: ${email.to_email} · Sending is still subject to approval and the configured email mode.`
+          : "No verified grievance address was matched. The app will not guess or email an unverified address.";
+        $("panel-email").querySelector("pre").textContent = email.body_text || "The email preview will appear when the case is complete.";
+        $("approve").disabled = data.status !== "READY_FOR_USER_REVIEW" && data.status !== "APPROVED_AND_FILING";
+        $("download").disabled = !data.pdf_url;
+        $("docket").disabled = data.status === "PURGED";
+        $("purge").disabled = data.status === "PURGED";
+        pdfUrl = data.pdf_url || pdfUrl;
+        $("pdfSize").textContent = data.pdf_size_bytes ? `${(data.pdf_size_bytes / 1024).toFixed(0)} KB · under 2 MB` : "";
+        $("auditList").replaceChildren(...(data.audit_log || []).map((entry) => {
+          const row = document.createElement("div");
+          row.className = "audit-item";
+          const dot = document.createElement("i");
+          const text = document.createElement("span");
+          const when = entry.timestamp ? new Date(entry.timestamp).toLocaleString() : "";
+          text.textContent = `${entry.previous_status || "NEW"} → ${entry.new_status} · ${entry.actor} · ${when}`;
+          row.append(dot, text);
+          return row;
+        }));
+        const guide = $("nchGuide");
+        if (data.nch_filing) {
+          guide.innerHTML = "<b>Next steps</b><br>Call 1915 or WhatsApp 8800001915, or file at <a href=\"https://consumerhelpline.gov.in/\" target=\"_blank\" rel=\"noreferrer\">consumerhelpline.gov.in</a>. Record your docket number below.";
+          guide.classList.add("show");
+        } else guide.classList.remove("show");
+      }
+
+      function renderFiles() {
+        $("imageList").replaceChildren(...screenshots.map((file, index) => {
+          const chip = document.createElement("div");
+          chip.className = "file-chip";
+          const name = document.createElement("span");
+          name.textContent = file.name;
+          const remove = document.createElement("button");
+          remove.type = "button"; remove.setAttribute("aria-label", `Remove ${file.name}`); remove.textContent = "×";
+          remove.onclick = () => { screenshots.splice(index, 1); renderFiles(); };
+          chip.append(name, remove);
+          return chip;
+        }));
+        $("audioList").replaceChildren();
+        if (audioBlob) {
+          const chip = document.createElement("div");
+          chip.className = "file-chip";
+          chip.innerHTML = `<span>${audioBlob.size ? `${(audioBlob.size / 1024).toFixed(0)} KB voice note` : "Voice note"}</span>`;
+          const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "×"; remove.setAttribute("aria-label", "Remove voice note");
+          remove.onclick = () => { audioBlob = null; renderFiles(); };
+          chip.append(remove);
+          $("audioList").append(chip);
+        }
+      }
+
+      async function submit() {
+        clearNotice();
+        if (!$("contact").value.trim()) { setNotice("Enter your phone number before creating the case.", "error"); return; }
+        if (!currentCase && !$("story").value.trim() && !audioBlob && screenshots.length === 0) {
+          setNotice("Describe the issue, record a voice note, or add a payment screenshot.", "error"); return;
+        }
+        $("submitCase").disabled = true;
+        $("submitCase").textContent = currentCase ? "Sending…" : "Creating…";
+        try {
+          const form = new FormData();
+          form.append("user_contact", $("contact").value.trim());
+          form.append("preferred_language", $("language").value.trim() || "en");
+          if ($("story").value.trim()) form.append("text", $("story").value.trim());
+          if (audioBlob) form.append("audio", audioBlob, audioBlob.type.includes("ogg") ? "voice-note.ogg" : "voice-note.webm");
+          screenshots.forEach((file) => form.append("screenshots", file, file.name));
+          const url = currentCase ? `/api/v1/cases/${encodeURIComponent(currentCase.case_reference)}/respond` : "/api/v1/cases/intake";
+          const data = await request(url, { method: "POST", body: form, headers: { "Idempotency-Key": crypto.randomUUID() } });
+          setCase(data);
+          $("story").value = "";
+          screenshots = []; audioBlob = null; renderFiles();
+          setNotice(data.message || (data.status === "READY_FOR_USER_REVIEW" ? "Review the facts and complaint before approving." : "Case updated. Check which information is still needed."));
+          await refreshReadiness();
+        } catch (error) {
+          setNotice(error.message || "The request could not be completed.", "error");
+        } finally {
+          $("submitCase").disabled = false;
+          if (currentCase) $("submitCase").textContent = "Send follow-up";
+          else $("submitCase").textContent = "Create complaint";
+        }
+      }
+
+      $("submitCase").addEventListener("click", submit);
+      $("refreshReady").addEventListener("click", refreshReadiness);
+      $("clearForm").addEventListener("click", () => {
+        $("story").value = ""; screenshots = []; audioBlob = null; renderFiles(); clearNotice();
+      });
+      $("newCase").addEventListener("click", () => {
+        currentCase = null; setCase(null); $("story").value = ""; screenshots = []; audioBlob = null; renderFiles(); clearNotice();
+      });
+      $("screenshots").addEventListener("change", (event) => {
+        const incoming = [...event.target.files];
+        if (screenshots.length + incoming.length > 3) { setNotice("A case can include at most 3 screenshots.", "error"); return; }
+        screenshots.push(...incoming); renderFiles(); event.target.value = "";
+      });
+      const zone = $("dropZone");
+      zone.addEventListener("dragover", (event) => { event.preventDefault(); zone.classList.add("drag"); });
+      zone.addEventListener("dragleave", () => zone.classList.remove("drag"));
+      zone.addEventListener("drop", (event) => {
+        event.preventDefault(); zone.classList.remove("drag");
+        const incoming = [...event.dataTransfer.files].filter((file) => file.type.startsWith("image/"));
+        if (screenshots.length + incoming.length > 3) { setNotice("A case can include at most 3 screenshots.", "error"); return; }
+        screenshots.push(...incoming); renderFiles();
+      });
+
+      $("recordButton").addEventListener("click", async () => {
+        const button = $("recordButton");
+        if (recorder && recorder.state === "recording") { recorder.stop(); return; }
+        if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+          setNotice("Voice recording is not supported in this browser. Type your message instead.", "error"); return;
+        }
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const preferred = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/webm", "audio/ogg"];
+          const mimeType = preferred.find((type) => MediaRecorder.isTypeSupported(type));
+          recorder = new MediaRecorder(stream, mimeType ? { mimeType } : {});
+          chunks = [];
+          recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data); };
+          recorder.onstop = () => {
+            audioBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+            stream?.getTracks().forEach((track) => track.stop());
+            button.textContent = "Start recording"; button.classList.remove("recording"); renderFiles();
+          };
+          recorder.start(); button.textContent = "Stop recording"; button.classList.add("recording");
+        } catch {
+          setNotice("Microphone access was denied. You can still type your message.", "error");
+        }
+      });
+
+      document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === tab));
+        document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${tab.dataset.tab}`));
+      }));
+
+      $("approve").addEventListener("click", async () => {
+        if (!currentCase || !confirm("Approve this complaint? In live mode, a verified merchant grievance address may receive the complaint and PDF.")) return;
+        $("approve").disabled = true;
+        try {
+          const data = await request(`/api/v1/cases/${encodeURIComponent(currentCase.case_reference)}/approve`, {
+            method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() }, body: JSON.stringify({ approved: true }),
+          });
+          setCase(data);
+          setNotice(data.message || "Approval recorded.");
+        } catch (error) { setNotice(error.message, "error"); }
+      });
+      $("download").addEventListener("click", async () => {
+        if (!currentCase || !pdfUrl) return;
+        try {
+          const response = await fetch(pdfUrl, { headers: headers(), cache: "no-store" });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.detail || "PDF download failed.");
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a"); link.href = url; link.download = `${currentCase.case_reference}_Nyaya_Bandhu.pdf`;
+          link.click(); URL.revokeObjectURL(url);
+        } catch (error) { setNotice(error.message, "error"); }
+      });
+      $("docket").addEventListener("click", async () => {
+        if (!currentCase) return;
+        const number = prompt("Enter the official NCH docket number:");
+        if (!number) return;
+        try {
+          const data = await request(`/api/v1/cases/${encodeURIComponent(currentCase.case_reference)}/docket`, {
+            method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ nch_docket_number: number.trim() }),
+          });
+          setCase(data); setNotice("Docket number recorded.");
+        } catch (error) { setNotice(error.message, "error"); }
+      });
+      $("purge").addEventListener("click", async () => {
+        if (!currentCase || !confirm("Permanently erase this case, its stored evidence, and its PDF? This cannot be undone.")) return;
+        try {
+          const data = await request(`/api/v1/cases/${encodeURIComponent(currentCase.case_reference)}/purge`, { method: "DELETE" });
+          const retainedRef = currentCase.case_reference;
+          setCase({ case_reference: retainedRef, status: data.status, extracted_facts: {}, missing_fields: [], audit_log: [] });
+          $("caseContent").querySelectorAll(".actions button").forEach((button) => button.disabled = true);
+          setNotice("Case data and stored evidence were erased. A zero-personal-data audit record remains.");
+          await refreshReadiness();
+        } catch (error) { setNotice(error.message, "error"); }
+      });
+      refreshReadiness();
+    })();
+  </script>
+</body>
+</html>
