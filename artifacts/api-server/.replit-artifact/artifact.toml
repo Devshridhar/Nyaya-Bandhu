@@ -1,32 +1,30 @@
 kind = "api"
-previewPath = "/api" # TODO - should be excluded from preview in the first place
-title = "API Server"
+previewPath = "/"
+title = "Nyaya Bandhu"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
 
 [[services]]
-localPort = 8080
+localPort = 8000
 name = "API Server"
-paths = ["/api"]
+paths = ["/"]
+
+[services.env]
+PORT = "8000"
 
 [services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+# The managed workflow starts in this artifact's directory.
+run = "python serve.py"
 
 [services.production]
 
-[services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
-
-[services.production.build.env]
-NODE_ENV = "production"
-
 [services.production.run]
-# we don't run through pnpm to make startup faster in production
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+# Works whether the process starts at the project root or in the artifact directory.
+args = ["bash", "-c", "if [ -f serve.py ]; then exec python serve.py; else exec python artifacts/api-server/serve.py; fi"]
 
 [services.production.run.env]
-PORT = "8080"
-NODE_ENV = "production"
+PORT = "8000"
+APP_ENV = "production"
 
 [services.production.health.startup]
-path = "/api/healthz"
+path = "/healthz"

@@ -1,0 +1,19 @@
+Upgrade the Nyaya Bandhu backend to use Replit's native PostgreSQL database and Replit App Storage (Object Storage) instead of local SQLite and local disk folders:
+
+1. REPLIT POSTGRESQL MIGRATION (`models/domain.py` & `core/config.py`):
+   - Provision and connect to Replit PostgreSQL using the `DATABASE_URL` environment variable with `SQLAlchemy` and `psycopg2-binary` (or `asyncpg`).
+   - Normalize `postgres://` to `postgresql+psycopg2://` automatically if needed.
+   - Enable `pool_pre_ping=True` and `pool_recycle=300` on the SQLAlchemy engine so serverless Neon PostgreSQL sleep/wake cycles never drop active connections.
+   - Keep strict AES-256-GCM field-level encryption for all PII columns (`encrypted_transcript`, `encrypted_ocr_json`, `encrypted_facts_json`, `encrypted_user_contact`).
+
+2. REPLIT APP STORAGE / OBJECT STORAGE (`services/storage_service.py`):
+   - Install and configure `replit-object-storage` (`from replit.object_storage import Client`).
+   - Create a dedicated `StorageService` wrapper with automatic local-disk fallback if a bucket isn't attached yet.
+   - Store sanitized UPI/invoice screenshots (`cases/{case_reference}/evidence_{idx}.jpg`) and compiled <2MB NCH PDF bundles (`cases/{case_reference}/Nyaya_Bandhu_Bundle.pdf`) directly in Replit App Storage using `upload_from_bytes` and `download_as_bytes`.
+   - Keep all bucket objects private; stream the PDF to authenticated users via `GET /api/v1/cases/{case_reference}/pdf` using `download_as_bytes`.
+
+3. CLOUD AUTO-PURGE (`workers/purge_scheduler.py` & `DELETE /api/v1/cases/{case_reference}/purge`):
+   - Update both the 7-day APScheduler cron job and the manual purge endpoint to delete all associated evidence images and PDF bundles from the Replit App Storage bucket (`client.delete(..., ignore_not_found=True)`) alongside wiping the encrypted PostgreSQL records.
+
+4. HEALTH CHECK UPDATE (`GET /readyz`):
+   - Verify live connectivity to both `DATABASE_URL` (PostgreSQL `SELECT 1`) and the Replit App Storage bucket (`client.list(max_results=1)`), displaying their status in the `/` test workbench banner.
